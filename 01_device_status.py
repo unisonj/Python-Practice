@@ -1,6 +1,3 @@
-
-
-
 hostname = input("Hostname: ")
 ip = input("IP address: ")
 status = input("Status: ")
