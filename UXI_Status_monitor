@@ -1,0 +1,93 @@
+
+import time
+import subprocess
+import pyautogui
+from pynput import mouse
+from pathlib import Path
+import requests
+from datetime import datetime
+
+webhook_url = Path(__file__).with_name(
+    "discord_webhook.txt"
+).read_text().strip()
+
+timenow = str(datetime.now())
+
+
+def send_discord_notification(message):
+
+    try:
+        response = requests.post(
+            webhook_url,
+            json={"content": message},
+            timeout=10
+        )
+        print("Status code:", response.status_code)
+        response.raise_for_status()
+
+    except requests.RequestException as e:
+        print(f"Error sending Discord notification: {e}")
+
+
+
+selected = []
+
+def on_click(x, y, button, pressed):
+    if pressed and button == mouse.Button.left:
+        selected.append((int(x), int(y)))
+        return False
+
+print("Click the pixel you want to monitor.")
+
+with mouse.Listener(on_click=on_click) as listener:
+    listener.join()
+
+x, y = selected[0]
+
+print(f"Monitoring pixel at ({x}, {y})")
+
+was_red = False
+
+timestamp = []
+
+while True:
+    screenshot = pyautogui.screenshot()
+    sound = "safety-air-horn-hornblasters.mp3"
+    r, g, b = screenshot.getpixel((x * 2, y * 2))[:3]
+
+    # Determine whether the pixel is mostly red
+    is_red = r > 150 and r > g + 60 and r > b + 60
+
+    print(f"Pixel RGB: {r}, {g}, {b} | Red: {is_red}")
+
+    if is_red and not was_red:
+        print("ALERT: Status turned red!")
+        #timestamp.append("f{timenow}"UXI Down")
+    
+        
+        subprocess.run([
+                    "osascript",
+                    "-e",
+                    'display notification "Red status detected" with title "NOC Monitor"'
+                ])
+        
+        #subprocess.run([
+                    #"afplay",
+                    #sound
+                #])
+        send_discord_notification("ALERT: Status turned red!")
+        
+
+        
+
+    if was_red and not is_red:
+        print("Status is no longer red.")
+        send_discord_notification("Status is no longer red.")
+
+        subprocess.run([
+            "osascript",
+            "-e",
+            'display notification "Status recovered" with title "NOC Monitor"'
+        ])
+    was_red = is_red
+    time.sleep(5)
