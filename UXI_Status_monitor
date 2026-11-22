@@ -71,10 +71,10 @@ while True:
                     'display notification "Red status detected" with title "NOC Monitor"'
                 ])
         
-        #subprocess.run([
-                    #"afplay",
-                    #sound
-                #])
+        subprocess.run([
+                    "afplay",
+                    sound
+                ])
         send_discord_notification("ALERT: Status turned red!")
         
 
